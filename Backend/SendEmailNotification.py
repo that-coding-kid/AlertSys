@@ -8,14 +8,14 @@ client = Courier(
   authorization_token=os.getenv("COURIER_API")
 )
 
-def send_email_notification(email, name, body):
+def send_email_notification(email, name, severity, body):
   resp = client.send(
     message={
       "to": {
         "email": email
       },
       "content": {
-        "title": 'Disaster Alert!',
+        "title": severity,
         "body": body
       },
       "data": {

@@ -2,12 +2,13 @@ from MongoDBConnector import get_database
 dbname = get_database()
 collection_name = dbname["notification_data"]
 
-def add_notification(email, location, date, time, text):
+def add_notification(email, location, severity, date, time, text):
     new_notification = {
         "email": email,
         "location": location,
         "date": date,
         "time": time,
+        "severity":severity,
         "text": text
     }
     collection_name.insert_one(new_notification)
