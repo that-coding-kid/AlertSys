@@ -14,6 +14,10 @@ app = Flask(__name__)
 @app.route('/api/user', methods=['GET'])
 def user_login():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
@@ -25,6 +29,10 @@ def user_login():
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
@@ -40,6 +48,10 @@ def create_user():
 @app.route('/api/admin', methods=['GET'])
 def admin_login():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
@@ -50,6 +62,10 @@ def admin_login():
 @app.route('/api/notification/admin', methods=['GET'])
 def get_notifications_by_admin():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     email = data.get('email')
     if hash == os.getenv('HASH'):
@@ -59,6 +75,10 @@ def get_notifications_by_admin():
 @app.route('/api/notification/location', methods=['GET'])
 def get_notifications_by_location():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     location = data.get('location')
     if hash == os.getenv('HASH'):
@@ -68,6 +88,10 @@ def get_notifications_by_location():
 @app.route('/api/notification', methods=['POST'])
 def add_notification():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
@@ -82,6 +106,10 @@ def add_notification():
 @app.route('/api/send_email', methods=['POST'])
 def send_email():
     data = request.json
+    try:
+        hash = data.get('hash')
+    except:
+        return jsonify({'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
