@@ -40,9 +40,7 @@ def create_user():
         name = data.get('name')
         mobile_number = data.get('mobile_number')
         location = data.get('location')
-        date_of_birth = data.get('date_of_birth')
-        gender = data.get('gender')
-        result = register_user(email, password, name, mobile_number, location, date_of_birth, gender)
+        result = register_user(email, password, name, mobile_number, location)
         return json.loads(json_util.dumps(result))
 
 @app.route('/api/admin', methods=['GET'])
