@@ -4,25 +4,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Courier(
-  authorization_token=os.getenv("COURIER_API")
-)
+def get_courier_client():
+    auth_token = os.getenv("COURIER_API")
+    if not auth_token:
+        raise ValueError("COURIER_API token not found in environment variables")
+    return Courier(authorization_token=auth_token)
 
 def send_email_notification(email, name, severity, body):
-  resp = client.send(
-    message={
-      "to": {
-        "email": email
-      },
-      "content": {
-        "title": severity,
-        "body": body
-      },
-      "data": {
-        "name": name
-      }
-    }
-  )
-
-  return(resp)
-
+    client = get_courier_client()
+    resp = client.send(
+        message={
+            "to": {
+                "email": email
+            },
+            "content": {
+                "title": severity,
+                "body": body
+            },
+            "data": {
+                "name": name
+            }
+        }
+    )
+    return resp
