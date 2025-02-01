@@ -17,7 +17,7 @@ def user_login():
     try:
         hash = data.get('hash')
     except:
-        return jsonify({'message': 'Invalid Hash'})
+        return jsonify({'status': 'error', 'message': 'Invalid Hash'})
     hash = data.get('hash')
     if hash == os.getenv('HASH'):
         email = data.get('email')
@@ -25,7 +25,8 @@ def user_login():
         result = get_user_details(email, password)
         return json.loads(json_util.dumps(result))
     else:
-        return jsonify({'message': 'Invalid Hash'})
+        return jsonify({'status': 'error', 'message': 'Invalid Hash'})
+    
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json

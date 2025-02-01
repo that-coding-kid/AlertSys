@@ -2,11 +2,18 @@ import pytest
 from flask import json
 from server import app
 import importlib
-
 from unittest.mock import patch, MagicMock
 import os
 from datetime import datetime
+import csv
+import json
 
+# Load test cases from JSON file
+def load_test_cases():
+    with open("test_cases.json", "r") as file:
+        return json.load(file)
+
+# Fixtures
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
@@ -19,141 +26,238 @@ def mock_env_hash():
     with patch.dict(os.environ, {'HASH': 'test_hash'}):
         yield
 
-@pytest.fixture
-def valid_user_data():
-    return {
-        "hash": "test_hash",
-        "email": "test@example.com",
-        "password": "test123",
-        "name": "Test User",
-        "mobile_number": "1234567890",
-        "location": "Test City"
-    }
+# CSV Logging Setup
+def log_test_result(test_case_id, description, input_data, expected_output, actual_output, status):
+    with open("test_log.csv", mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([test_case_id, description, input_data, expected_output, actual_output, status])
 
-@pytest.fixture
-def valid_notification_data():
-    return {
-        "hash": "test_hash",
-        "email": "test@example.com",
-        "location": "Test City",
-        "severity": "HIGH",
-        "date": datetime.now().strftime("%Y-%m-%d"),
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "text": "Test notification"
-    }
+# Load test cases
+test_cases = load_test_cases()
 
+# Test Classes
 class TestUserAPI:
     @pytest.mark.parametrize(
-        "input_data,expected_status,expected_message",
-        [
-            ({"hash": "test_hash", "email": "test@example.com", "password": "test123"}, 200, "success"),
-            ({"hash": "wrong_hash", "email": "test@example.com", "password": "test123"}, 200, "Invalid Hash"),
-            ({"email": "test@example.com", "password": "test123"}, 200, "Invalid Hash"),
-        ]
+        "test_case",
+        test_cases["user_login"],
+        ids=[tc["test_case_id"] for tc in test_cases["user_login"]]
     )
-    def test_user_login(self, client, mock_env_hash, input_data, expected_status, expected_message):
+    def test_user_login(self, client, mock_env_hash, test_case):
         with patch('server.get_user_details') as mock_get_user:
             mock_get_user.return_value = {"status": "success", "user": {"email": "test@example.com"}}
-            response = client.get('/api/user', json=input_data)
-            assert response.status_code == expected_status
-            if expected_message == "success":
-                assert json.loads(response.data)["status"] == "success"
-            else:
-                assert json.loads(response.data)["message"] == expected_message
+            response = client.get('/api/user', json=test_case["input"])
+            data = json.loads(response.data)
 
-    def test_user_registration(self, client, mock_env_hash, valid_user_data):
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "message": test_case["expected_message"]},
+                actual_output=data,
+                status="PASS" if data.get("status") == test_case["expected_status"] else "FAIL"
+            )
+
+            assert response.status_code == 200
+            if test_case["expected_message"] == "success":
+                assert data["status"] == "success"
+            else:
+                assert test_case["expected_message"] in data.get("message", "")
+
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["user_registration"],
+        ids=[tc["test_case_id"] for tc in test_cases["user_registration"]]
+    )
+    def test_user_registration(self, client, mock_env_hash, test_case):
         with patch('server.register_user') as mock_register:
             mock_register.return_value = {"status": "success", "message": "User registered successfully"}
-            response = client.post('/api/user', json=valid_user_data)
+            response = client.post('/api/user', json=test_case["input"])
+            data = json.loads(response.data)
+
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "message": test_case["expected_message"]},
+                actual_output=data,
+                status="PASS" if data.get("status") == "success" else "FAIL"
+            )
+
             assert response.status_code == 200
-            assert json.loads(response.data)["status"] == "success"
+            assert data["status"] == "success"
 
 class TestAdminAPI:
-    def test_admin_login(self, client, mock_env_hash):
-        admin_data = {
-            "hash": "test_hash",
-            "email": "admin@example.com",
-            "password": "admin123"
-        }
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["admin_login"],
+        ids=[tc["test_case_id"] for tc in test_cases["admin_login"]]
+    )
+    def test_admin_login(self, client, mock_env_hash, test_case):
         with patch('server.get_admin_details') as mock_get_admin:
             mock_get_admin.return_value = {"status": "success", "user": {"email": "admin@example.com"}}
-            response = client.get('/api/admin', json=admin_data)
+            response = client.get('/api/admin', json=test_case["input"])
+            data = json.loads(response.data)
+
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "user": {"email": "admin@example.com"}},
+                actual_output=data,
+                status="PASS" if data.get("status") == "success" else "FAIL"
+            )
+
             assert response.status_code == 200
-            assert json.loads(response.data)["status"] == "success"
+            assert data["status"] == "success"
 
 class TestNotificationAPI:
-    def test_add_notification(self, client, mock_env_hash, valid_notification_data):
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["add_notification"],
+        ids=[tc["test_case_id"] for tc in test_cases["add_notification"]]
+    )
+    def test_add_notification(self, client, mock_env_hash, test_case):
         with patch('server.add_notification') as mock_add_notification:
             mock_add_notification.return_value = {"status": "success", "message": "Notification added successfully"}
-            response = client.post('/api/notification', json=valid_notification_data)
-            assert response.status_code == 200
-            assert json.loads(response.data)["status"] == "success"
+            response = client.post('/api/notification', json=test_case["input"])
+            data = json.loads(response.data)
 
-    def test_get_notifications_by_admin(self, client, mock_env_hash):
-        query_data = {
-            "hash": "test_hash",
-            "email": "admin@example.com"
-        }
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "message": test_case["expected_message"]},
+                actual_output=data,
+                status="PASS" if data.get("status") == "success" else "FAIL"
+            )
+
+            assert response.status_code == 200
+            assert data["status"] == "success"
+
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["get_notifications_by_admin"],
+        ids=[tc["test_case_id"] for tc in test_cases["get_notifications_by_admin"]]
+    )
+    def test_get_notifications_by_admin(self, client, mock_env_hash, test_case):
         with patch('server.fetch_notification_by_admin') as mock_fetch:
             mock_fetch.return_value = [{"notification": "test"}]
-            response = client.get('/api/notification/admin', json=query_data)
-            assert response.status_code == 200
-            assert isinstance(json.loads(response.data), list)
+            response = client.get('/api/notification/admin', json=test_case["input"])
+            data = json.loads(response.data)
 
-    def test_get_notifications_by_location(self, client, mock_env_hash):
-        query_data = {
-            "hash": "test_hash",
-            "location": "Test City"
-        }
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output=test_case["expected_output"],
+                actual_output=data,
+                status="PASS" if isinstance(data, list) else "FAIL"
+            )
+
+            assert response.status_code == 200
+            assert isinstance(data, list)
+
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["get_notifications_by_location"],
+        ids=[tc["test_case_id"] for tc in test_cases["get_notifications_by_location"]]
+    )
+    def test_get_notifications_by_location(self, client, mock_env_hash, test_case):
         with patch('server.fetch_notification_by_location') as mock_fetch:
             mock_fetch.return_value = [{"notification": "test"}]
-            response = client.get('/api/notification/location', json=query_data)
+            response = client.get('/api/notification/location', json=test_case["input"])
+            data = json.loads(response.data)
+
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output=test_case["expected_output"],
+                actual_output=data,
+                status="PASS" if isinstance(data, list) else "FAIL"
+            )
+
             assert response.status_code == 200
-            assert isinstance(json.loads(response.data), list)
+            assert isinstance(data, list)
 
 class TestEmailAPI:
-    def test_send_email(self, client, mock_env_hash):
-        email_data = {
-            "hash": "test_hash",
-            "email": "test@example.com",
-            "name": "Test User",
-            "severity": "HIGH",
-            "body": "Test notification body"
-        }
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["send_email"],
+        ids=[tc["test_case_id"] for tc in test_cases["send_email"]]
+    )
+    def test_send_email(self, client, mock_env_hash, test_case):
         with patch('server.send_email_notification') as mock_send_email:
             mock_send_email.return_value = {"status": "success"}
-            response = client.post('/api/send_email', json=email_data)
+            response = client.post('/api/send_email', json=test_case["input"])
+            data = json.loads(response.data)
+
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"]},
+                actual_output=data,
+                status="PASS" if data.get("status") == "success" else "FAIL"
+            )
+
             assert response.status_code == 200
 
 class TestDatabaseOperations:
-    def test_user_registration_db(self, valid_user_data):
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["database_operations"],
+        ids=[tc["test_case_id"] for tc in test_cases["database_operations"]]
+    )
+    def test_user_registration_db(self, client, mock_env_hash, test_case):
         # Mock setup
         mock_collection = MagicMock()
         mock_collection.find_one.return_value = None  # Simulate no existing user
         mock_db = MagicMock()
-        mock_db.__getitem__.return_value = mock_collection  # mock_db["any_collection"] returns mock_collection
+        mock_db.__getitem__.return_value = mock_collection
 
         # Patch AND reload module
         with patch('MongoDBConnector.get_database', return_value=mock_db):
-            # Reload the module to re-initialize collections with the mock
             import NewUserRegistration
             importlib.reload(NewUserRegistration)
             from NewUserRegistration import register_user
 
             # Execute
             result = register_user(
-                valid_user_data["email"],
-                valid_user_data["password"],
-                valid_user_data["name"],
-                valid_user_data["mobile_number"],
-                valid_user_data["location"]
+                test_case["input"]["email"],
+                test_case["input"]["password"],
+                test_case["input"]["name"],
+                test_case["input"]["mobile_number"],
+                test_case["input"]["location"]
             )
 
-        # Assertions
-        mock_collection.find_one.assert_called_once_with({"email": valid_user_data["email"]})
-        mock_collection.insert_one.assert_called_once()
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "message": test_case["expected_message"]},
+                actual_output=result,
+                status="PASS" if result.get("status") == "success" else "FAIL"
+            )
 
-    def test_notification_db(self, valid_notification_data):
+            # Assertions
+            mock_collection.find_one.assert_called_once_with({"email": test_case["input"]["email"]})
+            mock_collection.insert_one.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "test_case",
+        test_cases["database_operations"],
+        ids=[tc["test_case_id"] for tc in test_cases["database_operations"]]
+    )
+    def test_notification_db(self, client, mock_env_hash, test_case):
         # Mock setup
         mock_collection = MagicMock()
         mock_db = MagicMock()
@@ -161,20 +265,29 @@ class TestDatabaseOperations:
 
         # Patch AND reload module
         with patch('MongoDBConnector.get_database', return_value=mock_db):
-            # Reload the module to re-initialize collections with the mock
             import NotificationUtility
             importlib.reload(NotificationUtility)
             from NotificationUtility import add_notification
 
             # Execute
             result = add_notification(
-                valid_notification_data["email"],
-                valid_notification_data["location"],
-                valid_notification_data["severity"],
-                valid_notification_data["date"],
-                valid_notification_data["time"],
-                valid_notification_data["text"]
+                test_case["input"]["email"],
+                test_case["input"]["location"],
+                test_case["input"]["severity"],
+                test_case["input"]["date"],
+                test_case["input"]["time"],
+                test_case["input"]["text"]
             )
 
-        # Assertions
-        mock_collection.insert_one.assert_called_once()
+            # Log the test result
+            log_test_result(
+                test_case_id=test_case["test_case_id"],
+                description=test_case["description"],
+                input_data=test_case["input"],
+                expected_output={"status": test_case["expected_status"], "message": test_case["expected_message"]},
+                actual_output=result,
+                status="PASS" if result.get("status") == "success" else "FAIL"
+            )
+
+            # Assertions
+            mock_collection.insert_one.assert_called_once()

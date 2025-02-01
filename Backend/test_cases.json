@@ -1,0 +1,153 @@
+{
+  "user_login": [
+    {
+      "test_case_id": "user_login_1",
+      "description": "Test user login with valid credentials",
+      "input": {"hash": "test_hash", "email": "test@example.com", "password": "test123"},
+      "expected_status": "success",
+      "expected_message": null
+    },
+    {
+      "test_case_id": "user_login_2",
+      "description": "Test user login with invalid hash",
+      "input": {"hash": "wrong_hash", "email": "test@example.com", "password": "test123"},
+      "expected_status": "error",
+      "expected_message": "Invalid Hash"
+    },
+    {
+      "test_case_id": "user_login_3",
+      "description": "Test user login with missing hash",
+      "input": {"email": "test@example.com", "password": "test123"},
+      "expected_status": "error",
+      "expected_message": "Invalid Hash"
+    }
+  ],
+  "user_registration": [
+    {
+      "test_case_id": "user_registration_1",
+      "description": "Test user registration with valid data",
+      "input": {
+        "hash": "test_hash",
+        "email": "new@example.com",
+        "password": "pass123",
+        "name": "New User",
+        "mobile_number": "9876543210",
+        "location": "New City"
+      },
+      "expected_status": "success",
+      "expected_message": "User registered successfully"
+    },
+    {
+      "test_case_id": "user_registration_2",
+      "description": "Test user registration with duplicate email",
+      "input": {
+        "hash": "test_hash",
+        "email": "duplicate@example.com",
+        "password": "pass123",
+        "name": "Duplicate User",
+        "mobile_number": "1122334455",
+        "location": "Duplicate City"
+      },
+      "expected_status": "error",
+      "expected_message": "User already exists"
+    }
+  ],
+  "admin_login": [
+    {
+      "test_case_id": "admin_login_1",
+      "description": "Test admin login with valid credentials",
+      "input": {
+        "hash": "test_hash",
+        "email": "admin@example.com",
+        "password": "admin123"
+      },
+      "expected_status": "success",
+      "expected_message": null
+    }
+  ],
+  "add_notification": [
+    {
+      "test_case_id": "add_notification_1",
+      "description": "Test adding a notification with valid data",
+      "input": {
+        "hash": "test_hash",
+        "email": "test@example.com",
+        "location": "Test City",
+        "severity": "HIGH",
+        "date": "2023-10-01",
+        "time": "12:00:00",
+        "text": "Test notification"
+      },
+      "expected_status": "success",
+      "expected_message": "Notification added successfully"
+    }
+  ],
+  "get_notifications_by_admin": [
+    {
+      "test_case_id": "get_notifications_by_admin_1",
+      "description": "Test fetching notifications by admin email",
+      "input": {
+        "hash": "test_hash",
+        "email": "admin@example.com"
+      },
+      "expected_output": [{"notification": "test"}]
+    }
+  ],
+  "get_notifications_by_location": [
+    {
+      "test_case_id": "get_notifications_by_location_1",
+      "description": "Test fetching notifications by location",
+      "input": {
+        "hash": "test_hash",
+        "location": "Test City"
+      },
+      "expected_output": [{"notification": "test"}]
+    }
+  ],
+  "send_email": [
+    {
+      "test_case_id": "send_email_1",
+      "description": "Test sending an email notification",
+      "input": {
+        "hash": "test_hash",
+        "email": "test@example.com",
+        "name": "Test User",
+        "severity": "HIGH",
+        "body": "Test notification body"
+      },
+      "expected_status": "success",
+      "expected_message": null
+    }
+  ],
+  "database_operations": [
+    {
+      "test_case_id": "user_registration_db_1",
+      "description": "Test user registration in the database",
+      "input": {
+        "hash": "test_hash",
+        "email": "test@example.com",
+        "password": "test123",
+        "name": "Test User",
+        "mobile_number": "1234567890",
+        "location": "Test City"
+      },
+      "expected_status": "success",
+      "expected_message": "User registered successfully"
+    },
+    {
+      "test_case_id": "notification_db_1",
+      "description": "Test adding a notification to the database",
+      "input": {
+        "hash": "test_hash",
+        "email": "test@example.com",
+        "location": "Test City",
+        "severity": "HIGH",
+        "date": "2023-10-01",
+        "time": "12:00:00",
+        "text": "Test notification"
+      },
+      "expected_status": "success",
+      "expected_message": "Notification added successfully"
+    }
+  ]
+}
